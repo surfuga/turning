@@ -20,6 +20,13 @@
 (defn- advance [s]
   (subs s 1))
 
+; internal tests
+(defn parse-a [s]
+  (if (= \a (first s))
+    (success \a (advance s))
+    (fail s)))
+
+
 (defn success? [result]
   (contains? result :success))
 
