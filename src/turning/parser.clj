@@ -26,6 +26,16 @@
     (success \a (advance s))
     (fail s)))
 
+;generalized p-char
+(defn p-char2 [c]
+  (fn [s]
+    (if (= c (first s))
+      (success c (advance s))
+      (fail s))))
+(def parse-g (p-char2 \g))
+(parse-g "gagarine")
+; => success
+
 
 (defn success? [result]
   (contains? result :success))
@@ -67,12 +77,71 @@
   (fn [s]
     (success (first s) (advance s))))
 
+; my own parse-or 
+(defn p-or2 [p1 p2]
+  (fn [s]
+    (let [r1 (p1 s)
+          r2 (p2 s)]
+      (if (success? r1)
+        r1
+        r2))))
+
+
 (defn p-or [p1 p2]
   (fn [s]
     (let [r1 (p1 s)]
       (if (failure? r1)
         (p2 s)
         (best-match r1 (p2 s))))))
+
+(defn p-or-priority [p1 p2]
+  (fn [s]
+    (let [r1 (p1 s)]
+      (if (failure? r1)
+        (p2 s)
+        r1))))
+
+;p-or-reduce
+; p-or in a reduce version
+;    -> func = best-match r1 r2
+;    -> init = {}
+;    -> seq = & parsers
+(defn my-reduce-best-match
+  [result parser]
+  (let [])
+  (best-match (parsed result) (parsed (parser (:original result))) ))
+(defn p-or-reduce [& parsers]
+  (fn [s]
+    (reduce my-reduce-best-match
+            {:success ["" s] :original s}
+            ; the problem is that every parser should have s as input and not (nonparsed result)
+            parsers)))
+
+(def p-or-a-g (p-or-reduce (p-char \a) (p-char \g)))
+(def p-a (p-char \a))
+(p-a "a")
+(p-or-a-g "ag")
+                                      
+
+
+; test
+(defn p-and2 [p1 p2]
+  (fn [s]
+    (let [r1 (p1 s)]
+      (if (failure? r1)
+        r1
+        (best-match r1 (p2 s))))))
+; how to do an and with parsers??
+; maybe and means first p1 then p2 and all with success
+(defn p-and3 [p1 p2]
+  (fn [s]
+    (let [r1 (p1 s)]
+      (if (failure? r1)
+        r1
+        (p2 (nonparsed r1))))))
+
+
+
 
 (defn p-and [p1 p2]
   (fn [s]
@@ -84,6 +153,32 @@
                      (nonparsed r2))
             (fail s)))
         (fail s)))))
+
+; mapreduce version of p-and!!
+
+; I want
+; a mapreduce that takes a first from the s seq
+; and applies a parser
+; and the result, when {:success [parsed nonparsed]} , the parsed is appended to the :success of the result
+; and the result, when {:failure nonparsed} is appended to {:failure} and the function exists
+
+; it's a reduce: 
+;  --->result = map with {:success [parsed nonparsed]}
+;  --->seq = seq of parsers to apply in order to the result
+;  --->func = a simple apply or an anonimous func that runs (parser (nonparsed result))
+(defn my-parser-reduce
+  [result parser]
+  (let [rtemp (parser (nonparsed result))]
+    (if (success? rtemp)
+      {:success [(str (parsed result) (parsed rtemp)) (nonparsed rtemp)]}
+      {:failure (nonparsed rtemp)})))
+
+(defn p-and-reduce [& parsers]
+  (fn [s]
+    (reduce my-parser-reduce
+            {:success ["" s]}
+            parsers)))
+
 
 (defn p-apply
   "Returns a parser that parses as p and applies f to
@@ -100,20 +195,42 @@
   "Parses 0 or more times"
   [p]
   (fn [s]
+    (println (str  "callto: p-many " p " [" s "]" ))
+    (println "-----------------------------")
     (loop [r (p s)
            accum ""
-           rest s]
-      (if (failure? r)
+           rest s
+           counter 0]
+      (println (str p "iter|--> parsed:" accum " nonparsed:" s " it:" counter))
+      (if (or  (failure? r) (< counter 0))
         (success accum rest)
         (let [parsed (parsed r)
               nonparsed (nonparsed r)]
           (if (empty? nonparsed)
             (success (str accum parsed) nonparsed)
             (do
-              #_(prn (str  "parsed: " (str accum parsed) " nonparsed: " nonparsed))
+              ;#_(prn (str  "parsed: " (str accum parsed) " nonparsed: " nonparsed))
               (recur (p nonparsed)
                      (str accum parsed)
-                     nonparsed))))))))
+                     nonparsed
+                     (+ counter 1) ))))))))
+
+;p-many-reduce
+;  function = p -> (p (nonparsed r))
+;   initialresult = {:success "" s}
+;  result =  (success (str accum (parsed r)) (nonparsed r))
+;  list = (nonparsed r)
+;  -> the problem is that reduce knows when to stop by the list, and the parsers don't use the list one char at a time...
+;  
+(defn my-parsing-reduce
+  [result step]
+  step)
+(defn p-many-reduce
+  [p]
+  (fn [s]
+    (reduce my-parsing-reduce
+            (success "" s)
+            s )))
 
 (defn p-many1
   "Parses 1 or more times"
