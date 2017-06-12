@@ -191,17 +191,17 @@
                  (nonparsed r))
         r))))
 
-(defn p-many
+(defn p-many-good
   "Parses 0 or more times"
   [p]
   (fn [s]
-    (println (str  "callto: p-many " p " [" s "]" ))
-    (println "-----------------------------")
+    ;(println (str  "callto: p-many " p " [" s "]" ))
+    ;(println "-----------------------------")
     (loop [r (p s)
            accum ""
            rest s
            counter 0]
-      (println (str p "iter|--> parsed:" accum " nonparsed:" s " it:" counter))
+      ;(println (str p " iter: " counter  " parsed:" accum " nonparsed:" s ))
       (if (or  (failure? r) (< counter 0))
         (success accum rest)
         (let [parsed (parsed r)
@@ -214,6 +214,61 @@
                      (str accum parsed)
                      nonparsed
                      (+ counter 1) ))))))))
+
+
+(defn p-many-debug
+  "Parses 0 or more times"
+  [p]
+  (fn [s]
+    ;(println (str  "callto: p-many " p " [" s "]" ))
+    ;(println "-----------------------------")
+    (loop [r (p s)
+           accum ""
+           rest s
+           counter 0
+           ]
+      (println (str p " iter: " counter  " parsed:" accum " nonparsed:" s ))
+      (if (or  (failure? r) (> counter 4))
+        (success accum rest)
+        (let [parsed (parsed r)
+              nonparsed (nonparsed r)]
+          (if (empty? nonparsed)
+            (success (str accum parsed) nonparsed)
+            (do
+              ;#_(prn (str  "parsed: " (str accum parsed) " nonparsed: " nonparsed))
+              (recur (p nonparsed)
+                     (str accum parsed)
+                     nonparsed
+                     (+ counter 1) ))))))))
+
+
+(defn p-many
+  "Parses 0 or more times"
+  [p]
+  (fn [s]
+    ;(println (str  "callto: p-many " p " [" s "]" ))
+    ;(println "-----------------------------")
+    (loop [r (p s)
+           accum ""
+           rest s
+           counter 0
+           final '((str "init " p) )]
+      (cons  final (str p " iter: " counter  " parsed:" accum " nonparsed:" s ))
+      (if (or  (failure? r) (> counter 4))
+        (do
+          (println (str (sort  final)))
+          (success accum rest))
+        (let [parsed (parsed r)
+              nonparsed (nonparsed r)]
+          (if (empty? nonparsed)
+            (success (str accum parsed) nonparsed)
+            (do
+                                        ;#_(prn (str  "parsed: " (str accum parsed) " nonparsed: " nonparsed))
+              (recur (p nonparsed)
+                     (str accum parsed)
+                     nonparsed
+                     (+ counter 1) 
+                     final ))))))))
 
 ;p-many-reduce
 ;  function = p -> (p (nonparsed r))

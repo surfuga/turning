@@ -25,16 +25,16 @@
 (def italic2 (p/p-and-reduce underscore word underscore))
 
 
-;(word "Hello I am a sentence.")
+(word "Hello I am a sentence.")
 (def p-paragraph (p/p-many 
                   (p/p-or 
                    (p/p-or
                     (p/p-or word whitespace) 
                     punctuation)
                    bold)))
-;(p-paragraph "Hello you prick.\n")
+(p-paragraph "Hello you prick.\n")
 (def paragraph->p (p/p-apply p-paragraph #(str "<p>" % "</p>")))
-;(paragraph->p "Hello you *prick*.\n")
+(paragraph->p "Hello you *prick*.\n")
 
 (defn chop-first
   ([s] (subs s 1))
@@ -65,7 +65,7 @@
 
 ; tests
 (def paragraph->p (p/p-apply text #(str "<p>" % "</p>")))
-;(paragraph->p "Hello you *prick*.\n")
+(paragraph->p "Hello you *prick*.\n")
 
 
 
@@ -87,8 +87,8 @@
 ;test
 (def p-nl-p (p/p-or nl p-paragraph))
 
-;(p-nl-p "\n\nhello")
-;(nl "\n\n")
+(p-nl-p "\n\nhello")
+(nl "\n\n")
 (def p-nl-many (p/p-many (p/p-or nl (p/p-char \a))))
 ;(p-nl-many "\na\na\n")
 (def p-nl-many (p/p-many (p/p-or nl word)))
@@ -113,6 +113,8 @@
 (def p-h1-text (p/p-or-priority p-h1 paragraph->p))
 (p-h1-text "# this is a title\n")
 (def p-title (p/p-many  (p/p-or-priority p-h1 p-paragraph)))
+(p-title "# a b c")
+(p-title "# b\n")
 (p-title "# this is a title\n")
 (println "#################\n\n\n\n\n\n\n<------------------------------>")
 
