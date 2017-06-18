@@ -59,6 +59,7 @@
   [r1 r2]
   (let [len1 (count (parsed r1))
         len2 (count (parsed r2))]
+    ;(println (str " len1 " len1 " and len2 " len2))
     (if (> len1 len2)
       r1
       r2)))
@@ -90,11 +91,15 @@
 (defn p-or [p1 p2]
   (fn [s]
     (let [r1 (p1 s)]
+      
       (if (failure? r1)
-        (p2 s)
-        (best-match r1 (p2 s))))))
+        (do (println (p2 s)) 
+            (p2 s))
+        (do  (best-match r1 (p2 s))  
+            (best-match r1 (p2 s)) )
+)))) 
 
-(defn p-or-priority [p1 p2]
+(defn p-or-priorityº [p1 p2]
   (fn [s]
     (let [r1 (p1 s)]
       (if (failure? r1)
@@ -191,7 +196,7 @@
                  (nonparsed r))
         r))))
 
-(defn p-many-good
+(defn p-many
   "Parses 0 or more times"
   [p]
   (fn [s]
@@ -242,7 +247,7 @@
                      (+ counter 1) ))))))))
 
 
-(defn p-many
+(defn p-many-pau
   "Parses 0 or more times"
   [p]
   (fn [s]
@@ -254,7 +259,7 @@
            counter 0
            final '((str "init " p) )]
       (cons  final (str p " iter: " counter  " parsed:" accum " nonparsed:" s ))
-      (if (or  (failure? r) (> counter 4))
+      (if (or  (failure? r) (< counter 0))
         (do
           (println (str (sort  final)))
           (success accum rest))

@@ -97,8 +97,17 @@
 ;(p-nl-many "\nAnd this is a text.\nThis is a sentence in an ew line\n")
 ;(def multiparagraph-p (p/p-many (p/p-or nl paragraph->p)))
 ;(multiparagraph-p "Hello you prick! Get a life\n")
-(def multipar (p/p-many (p/p-or nl p-paragraph)))
+(def multipar (p/p-many (p/p-or nl paragraph->p)))
 (multipar "\nAnd this is a text.\n This is anew sentence.")
+((p/p-or nl paragraph->p) "\nAnd this is it\n And then more.")
+(paragraph->p "\nAnd this is it\n And then more.")
+(nl "\n abd cdw.\nqwery asdfu.")
+; a problem is that with p-or, when doing the bestmatch operation if one of the functions adds the html tags, then depending on the length of the html tags that function could win the comparison
+; ex
+;  (nl "text") -> does not add html tags
+;  (paragaph->p "text") -> will add <p></p> 
+; so paragaph will always win even if nothing is parsed
+
 (def multipar2 (p/p-many (p/p-or-priority nl paragraph->p)))
 ; the paragraph->p p-apply that adds "<p></p>" fails
 ; use p-or2 with preference, nl prefernce over paragraph->p
@@ -112,11 +121,11 @@
 (p-h1-wspace "# this is a title\n")
 (def p-h1-text (p/p-or-priority p-h1 paragraph->p))
 (p-h1-text "# this is a title\n")
-(def p-title (p/p-many  (p/p-or-priority p-h1 p-paragraph)))
-(p-title "# a b c")
-(p-title "# b\n")
-(p-title "# this is a title\n")
-(println "#################\n\n\n\n\n\n\n<------------------------------>")
+;(def p-title (p/p-many  (p/p-or p-h1 p-paragraph)))
+;(p-title "# a b c")
+;(p-title "# b\n")
+;(p-title "# this is a title\n")
+;(println "#################\n\n\n\n\n\n\n<------------------------------>")
 
 
 
